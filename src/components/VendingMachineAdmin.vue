@@ -252,56 +252,10 @@
 </template>
 
 <script>
-import Vuex from "vuex";
-import Vue from "vue";
+// Using Helpers in Vuex
+import store from "../store/index";
+import { mapState, mapActions } from "vuex";
 
-Vue.use(Vuex);
-// fake API call //
-let inventory = {
-  chips: {
-    stock: 40
-  }
-};
-var pingInventory = function(item) {
-  return new Promise(resolve => {
-    setTimeout(function() {
-      resolve(inventory[item]);
-    }, 3000);
-  });
-};
-
-const store = new Vuex.Store({
-  state: {
-    supply: 40,
-    isRestocking: false,
-    isDispensing: false
-  },
-  actions: {
-    fetchFromInventory(context) {
-      context.commit("isRestocking", true);
-      pingInventory("chips")
-        .then(inventory => {
-          context.commit("stockItems", inventory.stock);
-        })
-        .finally(() => context.commit("isRestocking", false));
-    },
-    dispense(context) {
-      context.commit("dispense");
-    }
-  },
-  getters: {},
-  mutations: {
-    isRestocking(state, payload) {
-      state.isRestocking = payload;
-    },
-    dispense(state) {
-      state.supply--;
-    },
-    stockItems(state) {
-      state.supply = 40;
-    }
-  }
-});
 export default {
   name: "VendingMachineAdmin",
   store: store,
@@ -311,26 +265,32 @@ export default {
     };
   },
   computed: {
-    supply() {
-      return this.$store.state.supply;
-    },
-    isRestocking() {
-      return this.$store.state.isRestocking;
-    },
+    ...mapState(["supply", "isRestocking"]),
+    // supply() {
+    //   return this.$store.state.supply;
+    // },
+    // isRestocking() {
+    //   return this.$store.state.isRestocking;
+    // },
     isInLoadingState() {
       return this.$store.state.isRestocking || this.isDispensing;
     }
   },
   methods: {
+    ...mapActions({
+      restock: "fetchFromInventory",
+      dispense: "dispense"
+    }),
     dispense() {
       this.isDispensing = true;
       setTimeout(() => {
-        this.$store.dispatch("dispense");
+        this.dispense();
         this.isDispensing = false;
       }, 3000);
     },
     restock() {
-      this.$store.dispatch("fetchFromInventory");
+      // this.$store.dispatch("fetchFromInventory");
+      this.restock();
     }
   }
 };
